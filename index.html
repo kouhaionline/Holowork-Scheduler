@@ -39,9 +39,17 @@ button.s{background:transparent;color:var(--gold);border:1px solid var(--bd)}
 .m.off input{opacity:.4}
 #impBox{border-color:var(--gold)}
 .top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-.lang{display:flex;gap:6px;flex-shrink:0}
-.lang button{margin:6px 0 0;padding:6px 10px}
+.lang{display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0}
+.lang div{display:flex;gap:4px}
+.lang button{margin:0;padding:3px 8px;font-size:.75rem}
 .lang button.on{background:var(--gold);color:#fff}
+.beta{font-size:.65rem;font-weight:600;vertical-align:middle;border:1px solid var(--gold);color:var(--gold);border-radius:999px;padding:1px 8px;margin-left:6px}
+.h2s{cursor:pointer;font-weight:600;font-size:1rem;margin:0 0 10px}
+.wx{display:flex;align-items:center;justify-content:center;line-height:1}
+.wdis .wn{text-decoration:line-through;opacity:.45}
+#sum{white-space:pre-line;margin-bottom:12px}
+.tg{display:flex;gap:6px;padding:4px;border:1px solid var(--bd);border-radius:10px}
+.hg.past summary{text-decoration:line-through}
 .whead,.w1{display:grid;grid-template-columns:28px 28px 1fr 56px 62px 10px 28px 28px;gap:6px;align-items:center}
 .whead{color:var(--mut);font-size:.75rem;margin-bottom:4px}
 .wb{padding:6px 0;border-bottom:1px solid var(--bd)}
@@ -87,7 +95,8 @@ html[lang=ja] .dt{min-width:16ch}
 </head>
 <body>
 <main>
-<div class="top"><h1>Hololive Dreams – Holowork Milestone Scheduler</h1><div class="lang"><button id="lEN" class="s">EN</button><button id="lJP" class="s">JP</button></div></div>
+<div class="top"><h1>Hololive Dreams – Holowork Milestone Scheduler <span class="beta">Beta</span></h1><div class="lang"><div><button id="lEN" class="s">EN</button><button id="lJP" class="s">日本語</button></div><div><button id="tL" class="s" title="Light">☀️</button><button id="tD" class="s" title="Dark">🌙</button></div></div></div>
+<p class="sub tag">Scheduler to quickly clear holowork milestones for Green Cubes</p>
 <p class="sub">Enter how many times each member has been done, then generate a schedule until every member reaches Milestone 400.</p>
 
 <div class="card">
@@ -96,6 +105,7 @@ html[lang=ja] .dt{min-width:16ch}
 
 <div><label for="start">Starting hour (default: 0)</label><input id="start" type="number" min="0" value="0"></div>
 <div><label for="glen">Schedule length</label><select id="glen"><option value="100" data-en="Short (100 list)">Short (100 list)</option><option value="1000" data-en="Long (1000 list)">Long (1000 list)</option><option value="max" data-en="Max (all)">Max (all)</option><option value="custom" data-en="Custom">Custom</option></select></div>
+<div><label for="pmode">Priority</label><select id="pmode"><option value="near" data-en="Nearest milestone (strict)">Nearest milestone (strict)</option><option value="fast" data-en="Fastest finish (least done first)">Fastest finish (least done first)</option></select></div>
 <div id="gcw" hidden><label for="gcus">Custom (list count)</label><input id="gcus" type="number" min="1" value="200"></div>
 </div>
 </div>
@@ -108,11 +118,11 @@ html[lang=ja] .dt{min-width:16ch}
 <div class="row" style="margin-top:8px"><div><label for="from">Re-plan starting from hour</label><select id="from"></select></div></div>
 <button id="clr" class="s">Clear import</button>
 </div>
-<p class="mut" style="margin:10px 0 0">Generate keeps earlier runs as history and regenerates from the chosen hour. To sync, expand an hour in the schedule and press Sync now: that hour becomes the current time, finished runs are removed, runs still in progress are kept, and everything from that hour is regenerated starting now.</p>
+<p class="mut" style="margin:10px 0 0">Generate keeps earlier runs as history and regenerates from the chosen hour. To sync, expand an hour in the schedule and press Sync now: that hour becomes the current time and everything from that hour is regenerated starting now. Earlier hours are kept.</p>
 </div>
 
 <div class="card">
-<h2>Members &amp; current counts <span class="mut" id="cnt"></span></h2>
+<details id="memd" open><summary class="h2s"><span>Members &amp; current counts</span> <span class="mut" id="cnt"></span></summary>
 <div id="list"></div>
 <div class="row" style="margin-top:14px">
 <div><label for="nn">Add new member</label><input id="nn" placeholder="Name"></div>
@@ -121,7 +131,7 @@ html[lang=ja] .dt{min-width:16ch}
 <div><button id="add" style="margin:0">Add</button></div>
 </div>
 <button id="reset" class="s">Reset all counts to 0</button>
-<button id="unig" class="s">Clear all ignores</button>
+<button id="unig" class="s">Clear all ignores</button></details>
 </div>
 
 <div class="card">
@@ -129,7 +139,7 @@ html[lang=ja] .dt{min-width:16ch}
 
 <div id="wlist"></div>
 <div class="row" style="margin-top:12px"><div><label for="wname">Add new work</label><input id="wname" placeholder="Work name"></div><div><label for="whrs">Duration (hours)</label><input id="whrs" type="number" min="0" step="0.5" value="8"></div><div><button id="wadd" style="margin:0">Add work</button></div></div>
-<p class="mut" style="margin:10px 0 0">Each work is a lane that restarts after it finishes, with up to 5 members per run. Free members closest to their next milestone are picked first, and a member stays busy until their run ends. Lock members: type a name and press Enter; locked members only work in that work. Slots: 0 = unused, 5 = full; only slots can be edited. Use ▲▼ to reorder works, 🚫 to disable a work and 🗑 to delete it. Assumption: creating the next work list after a run ends takes about 5 minutes, so each work restarts 5 minutes after it finishes.</p>
+<p class="mut" style="margin:10px 0 0" id="wnote"></p>
 </div>
 
 <button id="go" style="font-size:1rem">Generate schedule</button> <span id="err"></span>
@@ -137,7 +147,7 @@ html[lang=ja] .dt{min-width:16ch}
 <div class="card" id="resCard" hidden>
 <h2>Schedule</h2>
 <div id="sum" class="mut"></div>
-<div class="tlbar"><div class="tl-l"><button id="nw" class="s">Now</button><button id="ex" class="s">Expand all</button><button id="co" class="s">Collapse all</button></div><div class="tl-r"><button id="dl">Export .txt</button><button id="cp" class="s">Copy</button></div></div>
+<div class="tlbar"><div class="tg"><button id="nw" class="s">Now</button><button id="dp" class="s">Delete past hour</button></div><div class="tg"><button id="ex" class="s">Expand all</button><button id="co" class="s">Collapse all</button></div><div class="tg"><button id="dl">Export .txt</button><button id="cp" class="s">Copy</button></div></div>
 <div id="tl"></div>
 <textarea id="out" hidden readonly spellcheck="false"></textarea>
 
@@ -184,12 +194,12 @@ const JP={
 "Sessions before the chosen one are kept as-is and counted. Sessions from the chosen one onward are regenerated using the current counts and ignore settings.":"選択したセッションより前はそのまま保持され、回数に加算されます。選択したセッション以降は、現在の回数と無視設定で再生成されます。",
 "Members & current counts":"メンバーと現在の回数","Add new member":"メンバーを追加","Generation":"期","…or new generation":"…または新しい期","Add":"追加",
 "Reset all counts to 0":"すべての回数を0にリセット","Clear all ignores":"無視をすべて解除","Generate schedule":"スケジュール生成","Schedule":"スケジュール","Export .txt":".txtを書き出し","Copy":"コピー",
-"Name":"名前","Enable work":"ワークを有効化","Disable work":"ワークを無効化","Delete work":"ワークを削除","Delete this work?":"このワークを削除しますか？","Lock members: type a name, press Enter":"固定メンバー：名前を入力してEnter","Each work holds up to 5 slots. Members are chosen by milestone distance as before, then placed into works. Lock members: type a name and press Enter; locked members always work in that work. If fewer members are available than slots, the longest works are left empty first. Use ✕ to disable a work and 🗑 to delete it.":"各ワークの枠数は最大5です。メンバーはこれまで通りマイルストーンまでの距離で選ばれ、その後ワークに配置されます。固定メンバー：名前を入力してEnterを押すと追加され、そのメンバーは常にそのワークに入ります。枠数より人数が少ない場合は、時間の長いワークから空にします。✕でワークを無効化、🗑で削除できます。","Starting hour (default: 0)":"開始時間（デフォルト：0）","Re-plan starting from hour":"再計画を開始する時間","Runs that start before the chosen hour are kept as-is and counted (members stay busy until they finish). Everything from the chosen hour onward is regenerated using the current counts, works and ignore settings.":"選択した時間より前に開始した実行はそのまま保持され、回数に加算されます（メンバーは終了まで稼働中のままです）。選択した時間以降は、現在の回数・ワーク・無視設定で再生成されます。","Each work is a lane that restarts as soon as it finishes, with up to 5 members per run. Free members closest to their next milestone are picked first, and a member stays busy until their run ends. Lock members: type a name and press Enter; locked members only work in that work. Use ✕ to disable a work and 🗑 to delete it.":"各ワークは、終了と同時に再開するレーンです。1回の実行に最大5名まで入れられます。空いているメンバーのうち、次のマイルストーンに近い順に選ばれ、実行が終わるまでそのメンバーは稼働中になります。固定メンバー：名前を入力してEnterを押すと追加され、そのメンバーはそのワークでのみ働きます。✕でワークを無効化、🗑で削除できます。","Move up":"上へ","Move down":"下へ","Expand all":"すべて展開","Collapse all":"すべて折りたたむ","Each work is a lane that restarts as soon as it finishes, with up to 5 members per run. Free members closest to their next milestone are picked first, and a member stays busy until their run ends. Lock members: type a name and press Enter; locked members only work in that work. Slots: 0 = unused, 5 = full; only slots can be edited. Use ▲▼ to reorder works, ✕ to disable a work and 🗑 to delete it.":"各ワークは、終了と同時に再開するレーンです。1回の実行に最大5名まで入れられます。空いているメンバーのうち、次のマイルストーンに近い順に選ばれ、実行が終わるまでそのメンバーは稼働中になります。固定メンバー：名前を入力してEnterを押すと追加され、そのメンバーはそのワークでのみ働きます。スロット：0=未使用、5=全枠使用。編集できるのはスロットのみです。▲▼でワークの順番を変更、✕で無効化、🗑で削除できます。","Now":"現在","Sync to now":"今に同期","Generate keeps earlier runs as history and regenerates from the chosen hour. Sync to now treats the chosen hour as the current time: finished runs are removed, runs still in progress are kept, and everything from that hour is regenerated starting now.":"「生成」は選択した時間より前の実行を履歴として保持し、その時間から再生成します。「今に同期」は選択した時間を現在時刻として扱い、終了済みの実行を削除し、進行中の実行は保持して、その時間から現在を起点に再生成します。","Sync now":"今すぐ同期","Sync from this hour? Earlier finished hours will be removed.":"この時間から同期しますか？終了済みの時間は削除されます。","Generate keeps earlier runs as history and regenerates from the chosen hour. To sync, expand an hour in the schedule and press Sync now: that hour becomes the current time, finished runs are removed, runs still in progress are kept, and everything from that hour is regenerated starting now.":"「生成」は選択した時間より前の実行を履歴として保持し、その時間から再生成します。同期するには、スケジュールで時間を展開して「今すぐ同期」を押します。その時間が現在時刻になり、終了済みの実行は削除され、進行中の実行は保持され、その時間から現在を起点に再生成されます。","Schedule length":"スケジュールの長さ","Short (100 list)":"ショート（100件）","Long (1000 list)":"ロング（1000件）","Max (all)":"最大（すべて）","Custom":"カスタム","Custom (list count)":"カスタム（件数）","Each work is a lane that restarts after it finishes, with up to 5 members per run. Free members closest to their next milestone are picked first, and a member stays busy until their run ends. Lock members: type a name and press Enter; locked members only work in that work. Slots: 0 = unused, 5 = full; only slots can be edited. Use ▲▼ to reorder works, 🚫 to disable a work and 🗑 to delete it. Assumption: creating the next work list after a run ends takes about 5 minutes, so each work restarts 5 minutes after it finishes.":"各ワークは終了後に再開するレーンで、1回の実行に最大5名まで入れられます。空いているメンバーのうち次のマイルストーンに近い順に選ばれ、実行が終わるまでそのメンバーは稼働中になります。固定メンバー：名前を入力してEnterを押すと追加され、そのメンバーはそのワークでのみ働きます。スロット：0=未使用、5=全枠使用。編集できるのはスロットのみです。▲▼で順番を変更、🚫で無効化、🗑で削除できます。前提：実行終了後に次のワークリストを作成するのに約5分かかるため、各ワークは終了の5分後に再開します。","Works":"ワーク","Work name":"ワーク名","Hours":"時間","Slots":"枠数","Add new work":"ワークを追加","Duration (hours)":"所要時間（時間）","Add work":"ワークを追加","Lock members (comma-separated, optional)":"固定メンバー（カンマ区切り・任意）","Unknown locked member: ":"不明な固定メンバー：","Add at least one work.":"ワークを少なくとも1つ追加してください。","Each work holds up to its number of slots (default 5). Members are chosen by milestone distance as before, then placed into works. Lock members: comma-separated names that must always work in that work. If fewer members are available than slots, the longest works are left empty first.":"各ワークは枠数（デフォルト5）まで入れられます。メンバーはこれまで通りマイルストーンまでの距離で選ばれ、その後ワークに配置されます。固定メンバー：そのワークに必ず入れるメンバー名をカンマ区切りで入力します。枠数より人数が少ない場合は、時間の長いワークから空にします。","e.g. Gen 6":"例：Gen 6","Name already exists.":"その名前は既に存在します。","No sessions found in that file.":"ファイルにセッションが見つかりません。","Simulation guard hit.":"シミュレーションの上限に達しました。","Reset all counts to 0?":"すべての回数を0にリセットしますか？"};
+"Name":"名前","Enable work":"ワークを有効化","Disable work":"ワークを無効化","Delete work":"ワークを削除","Delete this work?":"このワークを削除しますか？","Lock members: type a name, press Enter":"固定メンバー：名前を入力してEnter","Each work holds up to 5 slots. Members are chosen by milestone distance as before, then placed into works. Lock members: type a name and press Enter; locked members always work in that work. If fewer members are available than slots, the longest works are left empty first. Use ✕ to disable a work and 🗑 to delete it.":"各ワークの枠数は最大5です。メンバーはこれまで通りマイルストーンまでの距離で選ばれ、その後ワークに配置されます。固定メンバー：名前を入力してEnterを押すと追加され、そのメンバーは常にそのワークに入ります。枠数より人数が少ない場合は、時間の長いワークから空にします。✕でワークを無効化、🗑で削除できます。","Starting hour (default: 0)":"開始時間（デフォルト：0）","Re-plan starting from hour":"再計画を開始する時間","Runs that start before the chosen hour are kept as-is and counted (members stay busy until they finish). Everything from the chosen hour onward is regenerated using the current counts, works and ignore settings.":"選択した時間より前に開始した実行はそのまま保持され、回数に加算されます（メンバーは終了まで稼働中のままです）。選択した時間以降は、現在の回数・ワーク・無視設定で再生成されます。","Each work is a lane that restarts as soon as it finishes, with up to 5 members per run. Free members closest to their next milestone are picked first, and a member stays busy until their run ends. Lock members: type a name and press Enter; locked members only work in that work. Use ✕ to disable a work and 🗑 to delete it.":"各ワークは、終了と同時に再開するレーンです。1回の実行に最大5名まで入れられます。空いているメンバーのうち、次のマイルストーンに近い順に選ばれ、実行が終わるまでそのメンバーは稼働中になります。固定メンバー：名前を入力してEnterを押すと追加され、そのメンバーはそのワークでのみ働きます。✕でワークを無効化、🗑で削除できます。","Move up":"上へ","Move down":"下へ","Expand all":"すべて展開","Collapse all":"すべて折りたたむ","Each work is a lane that restarts as soon as it finishes, with up to 5 members per run. Free members closest to their next milestone are picked first, and a member stays busy until their run ends. Lock members: type a name and press Enter; locked members only work in that work. Slots: 0 = unused, 5 = full; only slots can be edited. Use ▲▼ to reorder works, ✕ to disable a work and 🗑 to delete it.":"各ワークは、終了と同時に再開するレーンです。1回の実行に最大5名まで入れられます。空いているメンバーのうち、次のマイルストーンに近い順に選ばれ、実行が終わるまでそのメンバーは稼働中になります。固定メンバー：名前を入力してEnterを押すと追加され、そのメンバーはそのワークでのみ働きます。スロット：0=未使用、5=全枠使用。編集できるのはスロットのみです。▲▼でワークの順番を変更、✕で無効化、🗑で削除できます。","Now":"現在","Sync to now":"今に同期","Generate keeps earlier runs as history and regenerates from the chosen hour. Sync to now treats the chosen hour as the current time: finished runs are removed, runs still in progress are kept, and everything from that hour is regenerated starting now.":"「生成」は選択した時間より前の実行を履歴として保持し、その時間から再生成します。「今に同期」は選択した時間を現在時刻として扱い、終了済みの実行を削除し、進行中の実行は保持して、その時間から現在を起点に再生成します。","Sync now":"今すぐ同期","Sync from this hour? Earlier finished hours will be removed.":"この時間から同期しますか？終了済みの時間は削除されます。","Generate keeps earlier runs as history and regenerates from the chosen hour. To sync, expand an hour in the schedule and press Sync now: that hour becomes the current time, finished runs are removed, runs still in progress are kept, and everything from that hour is regenerated starting now.":"「生成」は選択した時間より前の実行を履歴として保持し、その時間から再生成します。同期するには、スケジュールで時間を展開して「今すぐ同期」を押します。その時間が現在時刻になり、終了済みの実行は削除され、進行中の実行は保持され、その時間から現在を起点に再生成されます。","Schedule length":"スケジュールの長さ","Short (100 list)":"ショート（100件）","Long (1000 list)":"ロング（1000件）","Max (all)":"最大（すべて）","Custom":"カスタム","Custom (list count)":"カスタム（件数）","Each work is a lane that restarts after it finishes, with up to 5 members per run. Free members closest to their next milestone are picked first, and a member stays busy until their run ends. Lock members: type a name and press Enter; locked members only work in that work. Slots: 0 = unused, 5 = full; only slots can be edited. Use ▲▼ to reorder works, 🚫 to disable a work and 🗑 to delete it. Assumption: creating the next work list after a run ends takes about 5 minutes, so each work restarts 5 minutes after it finishes.":"各ワークは終了後に再開するレーンで、1回の実行に最大5名まで入れられます。空いているメンバーのうち次のマイルストーンに近い順に選ばれ、実行が終わるまでそのメンバーは稼働中になります。固定メンバー：名前を入力してEnterを押すと追加され、そのメンバーはそのワークでのみ働きます。スロット：0=未使用、5=全枠使用。編集できるのはスロットのみです。▲▼で順番を変更、🚫で無効化、🗑で削除できます。前提：実行終了後に次のワークリストを作成するのに約5分かかるため、各ワークは終了の5分後に再開します。","Delete past hour":"過去の時間を削除","Delete all past hours? Runs still in progress are kept.":"過去の時間をすべて削除しますか？進行中の実行は保持されます。","Sync from this hour? Earlier hours are kept.":"この時間から同期しますか？それ以前の時間は保持されます。","Scheduler to quickly clear holowork milestones for Green Cubes":"Green Cubes向け：ホロワークのマイルストーンを素早くクリアするスケジューラー","Generate keeps earlier runs as history and regenerates from the chosen hour. To sync, expand an hour in the schedule and press Sync now: that hour becomes the current time and everything from that hour is regenerated starting now. Earlier hours are kept.":"「生成」は選択した時間より前の実行を履歴として保持し、その時間から再生成します。同期するには、スケジュールで時間を展開して「今すぐ同期」を押します。その時間が現在時刻になり、その時間以降が現在を起点に再生成されます。それ以前の時間は保持されます。","Priority":"優先順位","Nearest milestone (strict)":"最寄りマイルストーン（厳密）","Fastest finish (least done first)":"最短完了（実行回数が少ない順）","Works":"ワーク","Work name":"ワーク名","Hours":"時間","Slots":"枠数","Add new work":"ワークを追加","Duration (hours)":"所要時間（時間）","Add work":"ワークを追加","Lock members (comma-separated, optional)":"固定メンバー（カンマ区切り・任意）","Unknown locked member: ":"不明な固定メンバー：","Add at least one work.":"ワークを少なくとも1つ追加してください。","Each work holds up to its number of slots (default 5). Members are chosen by milestone distance as before, then placed into works. Lock members: comma-separated names that must always work in that work. If fewer members are available than slots, the longest works are left empty first.":"各ワークは枠数（デフォルト5）まで入れられます。メンバーはこれまで通りマイルストーンまでの距離で選ばれ、その後ワークに配置されます。固定メンバー：そのワークに必ず入れるメンバー名をカンマ区切りで入力します。枠数より人数が少ない場合は、時間の長いワークから空にします。","e.g. Gen 6":"例：Gen 6","Name already exists.":"その名前は既に存在します。","No sessions found in that file.":"ファイルにセッションが見つかりません。","Simulation guard hit.":"シミュレーションの上限に達しました。","Reset all counts to 0?":"すべての回数を0にリセットしますか？"};
 const DW=()=>[["Singing Stream",8],["Gaming Lets Play",8],["Recording",10],["Casual Chat Stream",10],["Fishing",8]].map(([name,hours])=>({name,hours,slots:5,lock:[]}));
 const esc=s=>String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
 const T=s=>(lang==="jp"&&JP[s])||s;
 function renderWorks(){
-  $("wlist").innerHTML=works.map((w,i)=>'<div class="wb'+(w.off||!w.slots?' woff':'')+'"><div class="w1"><button class="wx" data-mv="'+i+'" data-d="-1" title="'+T("Move up")+'">▲</button><button class="wx" data-mv="'+i+'" data-d="1" title="'+T("Move down")+'">▼</button><span class="wn" title="'+esc(w.name)+'">'+esc(w.name)+'</span><span>🕒 '+w.hours+'H</span><span class="sl">👤<input type="number" min="0" max="5" data-wi="'+i+'" data-f="slots" value="'+w.slots+'"></span><i></i><button class="wx'+(w.off?' offb':'')+'" data-wo="'+i+'" title="'+T(w.off?"Enable work":"Disable work")+'">🚫</button><button class="wx" data-wd="'+i+'" title="'+T("Delete work")+'">🗑</button></div><div class="lkbox"><div class="chips">'+(w.lock||[]).map((n,k)=>'<span class="chip">'+esc(NL(n))+'<b data-wi="'+i+'" data-lr="'+k+'">×</b></span>').join("")+'<input class="lk" data-wi="'+i+'" data-f="lock" autocomplete="off" placeholder="'+T("Lock members: type a name, press Enter")+'"></div><div class="sug" data-sg="'+i+'"></div></div></div>').join("");
+  $("wlist").innerHTML=works.map((w,i)=>'<div class="wb'+(w.off?' wdis woff':(!w.slots?' woff':''))+'"><div class="w1"><button class="wx" data-mv="'+i+'" data-d="-1" title="'+T("Move up")+'">▲</button><button class="wx" data-mv="'+i+'" data-d="1" title="'+T("Move down")+'">▼</button><span class="wn" title="'+esc(w.name)+'">'+esc(w.name)+'</span><span>🕒 '+w.hours+'H</span><span class="sl">👤<input type="number" min="0" max="5" data-wi="'+i+'" data-f="slots" value="'+w.slots+'"></span><i></i><button class="wx'+(w.off?' offb':'')+'" data-wo="'+i+'" title="'+T(w.off?"Enable work":"Disable work")+'">🚫</button><button class="wx" data-wd="'+i+'" title="'+T("Delete work")+'">🗑</button></div><div class="lkbox"><div class="chips">'+(w.lock||[]).map((n,k)=>'<span class="chip">'+esc(NL(n))+'<b data-wi="'+i+'" data-lr="'+k+'">×</b></span>').join("")+'<input class="lk" data-wi="'+i+'" data-f="lock" autocomplete="off" placeholder="'+T("Lock members: type a name, press Enter")+'"></div><div class="sug" data-sg="'+i+'"></div></div></div>').join("");
   $("wlist").querySelectorAll("[data-f]").forEach(el=>{const f=el.dataset.f;if(f==="lock")return;el.oninput=()=>{const w=works[+el.dataset.wi];if(f==="name")w.name=el.value;else w[f]=Math.min(5,Math.max(0,Math.round(parseFloat(el.value)||0)));save();};});
   $("wlist").querySelectorAll("input.lk").forEach(el=>{
     const wi=+el.dataset.wi,box=$("wlist").querySelector('[data-sg="'+wi+'"]');let hi=0,list=[];
@@ -215,15 +225,32 @@ function renderWorks(){
 $("wadd").onclick=()=>{const n=$("wname").value.trim();if(!n)return;works.push({name:n,hours:Math.max(0,parseFloat($("whrs").value)||0),slots:5,lock:[]});$("wname").value="";$("whrs").value=8;save();renderWorks();};
 const GL=g=>(lang==="jp"&&GJ[g])||g;
 function fillFrom(){const cur=$("from").value;const st=[...new Set(imp.sessions.map(x=>x.num))].sort((a,b)=>a-b);const mx=Math.max(0,...imp.sessions.map(x=>x.end||0));if(!st.includes(mx))st.push(mx);$("from").innerHTML=st.map(n=>'<option value="'+n+'">'+(lang==="jp"?"時間 ":"Hour ")+n+'</option>').join("");if(cur)$("from").value=cur;}
-function renderTL(groups,fin,now,base){renderTL._a=[groups,fin,now,base];const MO=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function renderTL(groups,fin,now,base,nowMode){renderTL._a=[groups,fin,now,base,nowMode];const MO=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
   const J=lang==="jp";
   const fd=hh=>{const d=new Date(now+(hh-base)*3600000);let h12=d.getHours();const ap=h12>=12?"PM":"AM";h12=h12%12||12;const WD=J?["日","月","火","水","木","金","土"]:["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];const yy=String(d.getFullYear()).slice(-2);return '<span class="dt">'+(J?yy+"年"+pd(d.getMonth()+1)+"月"+pd(d.getDate())+"日("+WD[d.getDay()]+")":WD[d.getDay()]+", "+pd(d.getDate())+" "+MO[d.getMonth()]+" "+yy)+'</span>\u00a0\u00a0|\u00a0\u00a0'+String(h12).padStart(2,"0")+"."+String(d.getMinutes()).padStart(2,"0")+" "+ap;};
   const mx=Math.max(1,...groups.map(g=>fh(g.h).length));let h=groups.map(g=>'<details class="hg"><summary><button class="sy" data-h="'+g.h+'">'+(J?"今すぐ同期":"Sync now")+'</button><span class="hl">'+(J?"時間":"Hour")+"\u00a0"+fh(g.h).padStart(mx,"\u00a0")+'</span>\u00a0\u00a0-\u00a0\u00a0'+fd(g.h)+'</summary>'+g.r.map(r=>'<div class="rn"><b>'+esc(r.name)+'</b> <span class="mut">('+r.hours+'H)</span><ol>'+r.names.map(n=>'<li>'+esc(NL(n))+'</li>').join("")+'</ol></div>').join("")+'</details>').join("");
   if(fin.length)h+='<details class="hg"><summary>Finish times</summary><div class="rn">'+fin.map(x=>esc(x.replace(/^(.*?): hour /,(m,n)=>NL(n)+": "+(J?"時間 ":"hour ")))).join("<br>")+'</div></details>';
-  $("tl").innerHTML=h;$("tl").querySelectorAll(".sy").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();if(confirm(T("Sync from this hour? Earlier finished hours will be removed.")))generateTL(true,parseFloat(b.dataset.h));});showNow(true);
+  $("tl").innerHTML=h;$("tl").querySelectorAll(".sy").forEach(b=>b.onclick=e=>{e.preventDefault();e.stopPropagation();if(confirm(T("Sync from this hour? Earlier hours are kept.")))generateTL(true,parseFloat(b.dataset.h));});if(nowMode)showNow(true);else{showNow(false);[...$("tl").querySelectorAll("details.hg")].forEach((d,i)=>d.open=i===0);$("tl").scrollTop=0;}
 }
 const pd=n=>String(n).padStart(2,"\u00a0");
-const GAP=5/60;
+const WN_EN="Each work is a lane that restarts after it finishes, with up to 5 members per run.<br><br>Free members closest to their next milestone are picked first, and a member stays busy until their run ends.<br><br>Lock members: locked members only work in that work.<br>Slots: number of member that will work in that work. Min = 0, Max = 5.<br><br>Use ▲▼ to reorder works,<br>🚫 to disable a work and<br>🗑 to delete it.";
+const WN_JP="各ワークは終了後に再開するレーンで、1回の実行に最大5名まで入れられます。<br><br>空いているメンバーのうち次のマイルストーンに近い順に選ばれ、実行が終わるまでそのメンバーは稼働中になります。<br><br>固定メンバー：固定したメンバーはそのワークでのみ働きます。<br>スロット：そのワークで働くメンバー数。最小0、最大5。<br><br>▲▼でワークの順番を変更、<br>🚫でワークを無効化、<br>🗑でワークを削除できます。";
+function applyTheme(t){document.documentElement.dataset.theme=t;try{localStorage.setItem("mtheme",t);}catch(e){}$("tL").classList.toggle("on",t==="light");$("tD").classList.toggle("on",t==="dark");}
+function groupsOf(ss){const gm=new Map();ss.forEach(r=>{if(!gm.has(r.num))gm.set(r.num,{h:r.num,r:[],t:[]});gm.get(r.num).r.push(r);});return [...gm.values()].sort((a,b)=>a.h-b.h);}
+function buildText(ss,fin,data){const gs=groupsOf(ss);const lines=gs.map(g=>"Hour "+g.h+"\n"+g.r.map(r=>"\n"+r.name+" ("+r.hours+"h, until hour "+r.end+")\n"+r.names.map((n,i)=>(i+1)+". "+n).join("\n")).join("\n"));return lines.join("\n\n\n")+(fin&&fin.length?"\n\n\nFinish times\n"+fin.join("\n"):"")+"\n\n\n#DATA "+JSON.stringify(Object.assign({},data,{extra,extraGens,works,ignored}))+"\n";}
+function deletePast(){
+  const a=renderTL._a;if(!a||!curSched)return;
+  const gr=a[0],now=a[2],base=a[3];
+  let idx=0;gr.forEach((g,i)=>{if(now+(g.h-base)*3600000<=Date.now())idx=i;});
+  if(idx<=0)return;
+  if(!confirm(T("Delete all past hours? Runs still in progress are kept.")))return;
+  const cut=gr[idx].h,d=Object.assign({},curSched.data||{}),cn=Object.assign({},d.counts||counts);
+  const keep=curSched.sessions.filter(r=>{if(r.num<cut&&r.end<=cut){r.names.forEach(n=>{cn[n]=(cn[n]||0)+1;});return false;}return true;});
+  d.counts=cn;curSched={sessions:keep,data:d,fin:curSched.fin};
+  counts=Object.assign({},cn);save();render();
+  lastText=buildText(keep,curSched.fin,d);$("out").value=lastText;
+  renderTL(groupsOf(keep),curSched.fin||[],now,base,true);
+}
 const fh=h=>String(Math.round(h*100)/100);
 function fmtDT(ms,J){const d=new Date(ms);let h12=d.getHours();const ap=h12>=12?"PM":"AM";h12=h12%12||12;const WD=J?["日","月","火","水","木","金","土"]:["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];const MO=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];const yy=String(d.getFullYear()).slice(-2);return (J?yy+"年"+(d.getMonth()+1)+"月"+d.getDate()+"日("+WD[d.getDay()]+")":WD[d.getDay()]+", "+d.getDate()+" "+MO[d.getMonth()]+" "+yy)+" | "+String(h12).padStart(2,"0")+"."+String(d.getMinutes()).padStart(2,"0")+" "+ap;}
 function showNow(open){
@@ -240,7 +267,7 @@ function showImported(p,txt){
   const groups=[...gm.values()].sort((a,b)=>a.h-b.h);
   const d=p.data||{};
   curSched=p;lastText=txt;$("out").value=txt;lastSum=null;$("sum").textContent="";
-  renderTL(groups,[],d.at!=null?d.at:Date.now(),d.base!=null?d.base:0);
+  renderTL(groups,[],d.at!=null?d.at:Date.now(),d.base!=null?d.base:0,true);
   const a=renderTL._a;let idx=0;
   groups.forEach((g,i)=>{if(a[2]+(g.h-a[3])*3600000<=Date.now())idx=i;});
   if(groups[idx])$("from").value=String(groups[idx].h);
@@ -272,11 +299,11 @@ function generateTL(sync,syncH){if(syncH!=null&&curSched)imp=curSched;sync=!!(sy
     const runs=[];
     if(imp){
       T0=syncH!=null?syncH:(parseFloat($("from").value)||0);
-      imp.sessions.forEach(r=>{if(sync&&r.num<T0&&r.end<=T0){r.names.forEach(n=>{const x=byName.get(n.toLowerCase());if(x){x.count++;baseline[x.name]=(baseline[x.name]||0)+1;}});}else if(r.num<T0){
+      imp.sessions.forEach(r=>{if(r.num<T0){
         const ln=lanes.find(l=>l.w.name.toLowerCase()===r.name.toLowerCase());
         runs.push({start:r.num,end:r.end,hours:r.hours,name:r.name,wi:ln?ln.wi:-1,names:r.names});
         r.names.forEach(n=>{const x=byName.get(n.toLowerCase());if(x){x.count++;x.busy=Math.max(x.busy,r.end);}});
-        if(ln)ln.free=Math.max(ln.free,r3(r.end+GAP));
+        if(ln)ln.free=Math.max(ln.free,r.end);
       }});
     }
     const A=(imp&&!sync&&imp.data&&imp.data.at!=null)?{at:imp.data.at,base:imp.data.base||0}:{at:Date.now(),base:T0};
@@ -285,15 +312,15 @@ function generateTL(sync,syncH){if(syncH!=null&&curSched)imp=curSched;sync=!!(sy
     const lockLane=new Map();
     lanes.forEach(l=>(l.w.lock||[]).forEach(n=>{const x=byName.get(n.toLowerCase());if(x&&!x.ig&&!lockLane.has(x))lockLane.set(x,l.wi);}));
     const left=x=>nextStep(x.count)!==null;
-    let guard=0,ng=0,lastSt=null,trunc=false;const lv=$("glen").value;const maxG=lv==="max"?Infinity:lv==="custom"?Math.max(1,parseInt($("gcus").value,10)||100):parseInt(lv,10);
+    let guard=0,ng=0,lastSt=null,trunc=false;const bal=$("pmode").value==="fast";const lv=$("glen").value;const maxG=lv==="max"?Infinity:lv==="custom"?Math.max(1,parseInt($("gcus").value,10)||100):parseInt(lv,10);
     while(act.some(left)){
       if(++guard>500000)throw new Error(T("Simulation guard hit."));
       const ln=lanes.slice().sort((a,b)=>a.free-b.free||a.wi-b.wi)[0];
       const t=ln.free;if(!isFinite(t))break;
       const forced=act.filter(x=>left(x)&&x.busy<=t&&lockLane.get(x)===ln.wi).slice(0,ln.w.slots);
       const rest=act.filter(x=>left(x)&&x.busy<=t&&!lockLane.has(x))
-        .map(x=>({x,rem:nextStep(x.count)-x.count}))
-        .sort((a,b)=>a.rem-b.rem||a.x.gen-b.x.gen||a.x.row-b.x.row)
+        .map(x=>({x,rem:nextStep(x.count)-x.count,tg:nextStep(x.count)}))
+        .sort((a,b)=>(bal?a.x.count-b.x.count:0)||a.rem-b.rem||a.x.gen-b.x.gen||a.x.row-b.x.row)
         .slice(0,ln.w.slots-forced.length).map(o=>o.x);
       const mem=forced.concat(rest).sort((a,b)=>a.gen-b.gen||a.row-b.row);
       if(!mem.length){
@@ -305,7 +332,7 @@ function generateTL(sync,syncH){if(syncH!=null&&curSched)imp=curSched;sync=!!(sy
       const end=r3(t+ln.w.hours);
       mem.forEach(x=>{x.count++;x.busy=end;if(!left(x))x.fin=end;});
       runs.push({start:t,end,hours:ln.w.hours,name:ln.w.name,wi:ln.wi,names:mem.map(x=>x.name)});
-      ln.free=r3(end+GAP);
+      ln.free=end;
     }
     runs.sort((a,b)=>a.start-b.start||a.wi-b.wi);
     const groups=[];let g=null;
@@ -313,10 +340,10 @@ function generateTL(sync,syncH){if(syncH!=null&&curSched)imp=curSched;sync=!!(sy
     const lines=groups.map(x=>"Hour "+x.h+"\n"+x.t.join("\n"));
     const fin=act.filter(x=>x.fin!==undefined).sort((a,b)=>a.fin-b.fin||a.gen-b.gen||a.row-b.row).map(x=>x.name+": hour "+x.fin);
     lastText=lines.join("\n\n\n")+(fin.length?"\n\n\nFinish times\n"+fin.join("\n"):"")+"\n\n\n#DATA "+JSON.stringify({counts:baseline,extra,extraGens,works,ignored,at:A.at,base:A.base})+"\n";
-    $("out").value=lastText;renderTL(groups,fin,A.at,A.base);curSched={sessions:runs.map(r=>({num:r.start,end:r.end,hours:r.hours,name:r.name,names:r.names})),data:{at:A.at,base:A.base}};
+    $("out").value=lastText;renderTL(groups,fin,A.at,A.base,sync);curSched={sessions:runs.map(r=>({num:r.start,end:r.end,hours:r.hours,name:r.name,names:r.names})),data:{at:A.at,base:A.base,counts:baseline},fin:fin};
     if(sync){counts=Object.assign({},baseline);imp=null;impFn=null;$("impBox").hidden=true;$("file").value="";render();}
     const na=act.length,nr=runs.length,te=runs.reduce((a,r)=>Math.max(a,r.end),0),dy=(te/24).toFixed(1);
-    lastSum=()=>lang==="jp"?na+"名 · "+nr+"回の実行 · "+fmtDT(A.at+(te-A.base)*3600000,true)+(trunc?"まで表示（続きあり）":"に完了"):na+" active members · "+nr+" runs · "+(trunc?"listed until ":"finishes at ")+fmtDT(A.at+(te-A.base)*3600000,false)+(trunc?" (more hours remain)":"");
+    lastSum=()=>lang==="jp"?na+"名 · "+nr+"回の実行\n"+fmtDT(A.at+(te-A.base)*3600000,true)+(trunc?"まで表示（続きあり）":"に完了"):na+" active members · "+nr+" runs\n"+(trunc?"listed until ":"finishes at ")+fmtDT(A.at+(te-A.base)*3600000,false)+(trunc?" (more hours remain)":"");
     $("sum").textContent=lastSum();
     $("resCard").hidden=false;save();
   }catch(e){$("err").textContent=e.message;}
@@ -328,13 +355,13 @@ function applyLang(){
   $("lEN").classList.toggle("on",!jp);$("lJP").classList.toggle("on",jp);
   const w=document.createTreeWalker(document.querySelector("main"),NodeFilter.SHOW_TEXT);let n;
   while((n=w.nextNode())){
-    if(n.parentNode.closest("script,textarea,select,#list,#impInfo,#sum,#cnt,#err,#note"))continue;
+    if(n.parentNode.closest("script,textarea,select,#list,#impInfo,#sum,#cnt,#err,#note,#wnote"))continue;
     if(n._o===undefined)n._o=n.nodeValue;
     const k=n._o.trim();if(!k)continue;
     n.nodeValue=(jp&&JP[k])?n._o.replace(k,JP[k]):n._o;
   }
-  $("note").innerHTML=jp?NOTE_JP:NOTE_EN;
-  $("nn").placeholder=T("Name");$("wname").placeholder=T("Work name");Array.from($("glen").options).forEach(o=>{o.textContent=T(o.dataset.en);});$("nng").placeholder=T("e.g. Gen 6");
+  $("note").innerHTML=jp?NOTE_JP:NOTE_EN;$("wnote").innerHTML=jp?WN_JP:WN_EN;
+  $("nn").placeholder=T("Name");$("wname").placeholder=T("Work name");Array.from($("glen").options).concat(Array.from($("pmode").options)).forEach(o=>{o.textContent=T(o.dataset.en);});$("nng").placeholder=T("e.g. Gen 6");
   fillGens($("ng").value||undefined);
   if(imp)fillFrom();
   if(lastSum)$("sum").textContent=lastSum();
@@ -345,10 +372,10 @@ function applyLang(){
 
 function load(){
   try{const s=JSON.parse(localStorage.getItem("msched")||"{}");counts=s.counts||{};extra=s.extra||[];extraGens=s.extraGens||[];ignored=s.ignored||{};if(!s.ign2)["Justice","FLOW GLOW","ASOBI★MAWARI-TAI!"].forEach(g=>GENS.find(x=>x[0]===g)[1].forEach(n=>ignored[n]=1));if(Array.isArray(s.works)&&s.works.length)works=s.works.map(w=>Object.assign({},w,{slots:Math.min(5,Math.max(0,w.slots==null?5:w.slots))}));
-    ["start","glen","gcus"].forEach(k=>{if(s[k]!==undefined&&s[k]!=="")$(k).value=s[k];});}catch(e){}
+    ["start","glen","gcus","pmode"].forEach(k=>{if(s[k]!==undefined&&s[k]!=="")$(k).value=s[k];});}catch(e){}
 }
 function save(){
-  try{localStorage.setItem("msched",JSON.stringify({v:2,ign2:1,counts,extra,extraGens,ignored,works,start:$("start").value,glen:$("glen").value,gcus:$("gcus").value}));}catch(e){}
+  try{localStorage.setItem("msched",JSON.stringify({v:2,ign2:1,counts,extra,extraGens,ignored,works,start:$("start").value,glen:$("glen").value,gcus:$("gcus").value,pmode:$("pmode").value}));}catch(e){}
 }
 function build(){
   members=[];
@@ -402,13 +429,14 @@ $("add").onclick=()=>{
 };
 $("reset").onclick=()=>{if(confirm(T("Reset all counts to 0?"))){counts={};save();render();}};
 $("unig").onclick=()=>{ignored={};save();render();};
-["start","glen","gcus"].forEach(k=>{$(k).oninput=save;$(k).onchange=()=>{save();$("gcw").hidden=$("glen").value!=="custom";};});
-$("go").onclick=()=>generateTL(false);$("nw").onclick=()=>showNow(true);$("ex").onclick=()=>$("tl").querySelectorAll("details").forEach(d=>d.open=true);$("co").onclick=()=>$("tl").querySelectorAll("details").forEach(d=>d.open=false);
+["start","glen","gcus","pmode"].forEach(k=>{$(k).oninput=save;$(k).onchange=()=>{save();$("gcw").hidden=$("glen").value!=="custom";};});
+$("go").onclick=()=>generateTL(false);$("nw").onclick=()=>showNow(true);$("dp").onclick=deletePast;$("tL").onclick=()=>applyTheme("light");$("tD").onclick=()=>applyTheme("dark");$("ex").onclick=()=>$("tl").querySelectorAll("details").forEach(d=>d.open=true);$("co").onclick=()=>$("tl").querySelectorAll("details").forEach(d=>d.open=false);
 $("cp").onclick=()=>{try{navigator.clipboard.writeText(lastText);}catch(e){}};
 $("dl").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([lastText],{type:"text/plain"}));a.download="milestone-schedule.txt";document.body.appendChild(a);a.click();a.remove();};
 try{lang=localStorage.getItem("mlang")||"en";}catch(e){}
 $("lEN").onclick=()=>{lang="en";try{localStorage.setItem("mlang",lang);}catch(e){}applyLang();};
 $("lJP").onclick=()=>{lang="jp";try{localStorage.setItem("mlang",lang);}catch(e){}applyLang();};
+let th=null;try{th=localStorage.getItem("mtheme");}catch(e){}if(!th)th=(typeof matchMedia==="function"&&matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light";applyTheme(th);
 load();if(!works.length)works=DW();$("go").before($("stH").parentNode);$("gcw").hidden=$("glen").value!=="custom";fillGens();applyLang();
 </script>
 </body>
